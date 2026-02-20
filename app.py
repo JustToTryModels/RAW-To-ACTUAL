@@ -14,38 +14,10 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. CUSTOM CSS INJECTION
+# 2. CUSTOM CSS INJECTION (Minimal - No color forcing)
 # ==========================================
 CUSTOM_CSS = """
 <style>
-    /* Table Styling */
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 25px 0;
-        font-size: 0.9em;
-        font-family: sans-serif;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-    }
-    thead tr {
-        background-color: #009879;
-        color: #ffffff;
-        text-align: left;
-    }
-    th, td {
-        padding: 12px 15px;
-        border: 1px solid #ddd;
-    }
-    tbody tr {
-        border-bottom: 1px solid #dddddd;
-    }
-    tbody tr:nth-of-type(even) {
-        background-color: rgba(0,0,0,0.05);
-    }
-    tbody tr:hover {
-        background-color: rgba(0,152,121,0.1);
-    }
-    
     /* LaTeX Math Scrolling */
     .katex-display {
         overflow-x: auto;
@@ -57,21 +29,6 @@ CUSTOM_CSS = """
     /* Text Area Styling */
     .stTextArea textarea {
         font-family: 'Courier New', Courier, monospace;
-        background-color: #1e1e1e;
-        color: #d4d4d4;
-    }
-    
-    /* Copy Success Animation */
-    @keyframes fadeInOut {
-        0% { opacity: 0; transform: translateY(-10px); }
-        20% { opacity: 1; transform: translateY(0); }
-        80% { opacity: 1; transform: translateY(0); }
-        100% { opacity: 0; transform: translateY(-10px); }
-    }
-    .copy-success {
-        animation: fadeInOut 2s ease-in-out;
-        color: #4CAF50;
-        font-weight: bold;
     }
 </style>
 """
@@ -81,13 +38,8 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 # 3. ADVANCED TEXT PREPROCESSOR
 # ==========================================
 def preprocess_text(text):
-    """
-    Cleans and prepares raw text for Streamlit's Markdown/KaTeX engine.
-    Converts standard LaTeX delimiters to Streamlit-compatible delimiters.
-    """
     if not text:
         return ""
-    
     text = re.sub(r'\\\[(.*?)\\\]', r'$$\1$$', text, flags=re.DOTALL)
     text = re.sub(r'\\\((.*?)\\\)', r'$\1$', text)
     
@@ -99,77 +51,48 @@ def preprocess_text(text):
     for env in environments:
         pattern = rf'(?<!\$\$)\n\\begin\{{{env}\}}(.*?)\\end\{{{env}\}}\n(?!\$\$)'
         text = re.sub(pattern, wrap_equation, text, flags=re.DOTALL)
-
     return text
 
 # ==========================================
-# 4. EXPORT FUNCTIONALITY
+# 4. EXPORT GENERATORS
 # ==========================================
 def generate_full_html(rendered_text, title="Exported Document"):
-    """Generates a complete, self-contained HTML document with KaTeX, 
-    Markdown rendering via marked.js, syntax highlighting, and professional styling."""
+    """Clean HTML with no forced colors — inherits natural browser defaults."""
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{title}</title>
-    
-    <!-- KaTeX for Math Rendering -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-    
-    <!-- Marked.js for Markdown Rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
-    <!-- Highlight.js for Code Syntax Highlighting -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css">
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
-    
     <style>
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             max-width: 900px;
             margin: 0 auto;
             padding: 40px 20px;
             line-height: 1.8;
-            color: #333;
-            background-color: #fafafa;
-        }}
-        h1 {{ font-size: 2em; margin: 0.8em 0 0.4em; color: #1a1a2e; border-bottom: 2px solid #009879; padding-bottom: 10px; }}
-        h2 {{ font-size: 1.6em; margin: 0.7em 0 0.3em; color: #16213e; }}
-        h3 {{ font-size: 1.3em; margin: 0.6em 0 0.3em; color: #1a1a2e; }}
-        h4, h5, h6 {{ margin: 0.5em 0 0.2em; color: #333; }}
-        p {{ margin: 0.6em 0; }}
-        a {{ color: #009879; text-decoration: none; }}
-        a:hover {{ text-decoration: underline; }}
-        blockquote {{
-            border-left: 4px solid #009879;
-            margin: 1em 0;
-            padding: 0.5em 1em;
-            background-color: #f0f9f6;
-            color: #555;
         }}
         table {{
             border-collapse: collapse;
             width: 100%;
             margin: 20px 0;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            overflow: hidden;
         }}
-        thead tr {{ background-color: #009879; color: #fff; }}
-        th, td {{ border: 1px solid #ddd; padding: 12px 15px; text-align: left; }}
-        tbody tr:nth-of-type(even) {{ background-color: #f9f9f9; }}
-        tbody tr:hover {{ background-color: #e8f5e9; }}
+        th, td {{
+            border: 1px solid #ccc;
+            padding: 10px 14px;
+            text-align: left;
+        }}
         pre {{
             background-color: #f6f8fa;
             padding: 16px;
-            border-radius: 8px;
+            border-radius: 6px;
             overflow-x: auto;
-            margin: 1em 0;
             border: 1px solid #e1e4e8;
         }}
         code {{
@@ -177,51 +100,59 @@ def generate_full_html(rendered_text, title="Exported Document"):
             font-size: 0.9em;
         }}
         :not(pre) > code {{
-            background-color: #eff1f3;
+            background-color: #f0f0f0;
             padding: 2px 6px;
             border-radius: 4px;
         }}
-        ul, ol {{ margin: 0.5em 0; padding-left: 2em; }}
-        li {{ margin: 0.3em 0; }}
-        hr {{ border: none; border-top: 2px solid #e0e0e0; margin: 2em 0; }}
-        img {{ max-width: 100%; height: auto; border-radius: 8px; margin: 1em 0; }}
-        .katex-display {{ overflow-x: auto; overflow-y: hidden; padding: 10px 0; }}
-        .header-banner {{
-            background: linear-gradient(135deg, #009879 0%, #16213e 100%);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            text-align: center;
+        blockquote {{
+            border-left: 4px solid #ccc;
+            margin: 1em 0;
+            padding: 0.5em 1em;
         }}
-        .header-banner h1 {{ color: white; border: none; margin: 0; }}
-        .footer {{
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-            text-align: center;
-            color: #999;
-            font-size: 0.85em;
+        img {{ max-width: 100%; height: auto; }}
+        .katex-display {{ overflow-x: auto; overflow-y: hidden; padding: 10px 0; }}
+        hr {{ border: none; border-top: 1px solid #ccc; margin: 2em 0; }}
+
+        /* PDF Button */
+        @media print {{
+            .no-print {{ display: none !important; }}
+        }}
+        .pdf-btn {{
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: #333;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 0.95em;
+            cursor: pointer;
+            font-weight: bold;
+        }}
+        .pdf-btn:hover {{ background: #555; }}
+        .pdf-tip {{
+            position: fixed;
+            top: 65px;
+            right: 20px;
+            z-index: 1000;
+            background: #fffbe6;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.82em;
+            max-width: 260px;
+            border: 1px solid #e0d080;
         }}
     </style>
 </head>
 <body>
-    <div class="header-banner">
-        <h1>📄 {title}</h1>
-        <p style="opacity:0.8; margin-top:5px;">Generated by Advanced Universal Renderer</p>
-    </div>
+    <button class="pdf-btn no-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    <div class="pdf-tip no-print">💡 Click the button, then choose <em>"Save as PDF"</em> in the print dialog.</div>
 
     <div id="content"></div>
 
-    <div class="footer">
-        <p>Generated on <script>document.write(new Date().toLocaleDateString())</script> &bull; Advanced Universal Renderer</p>
-    </div>
-
     <script>
-        // Raw markdown content
-        const rawContent = {repr(rendered_text)};
-        
-        // Configure marked
         marked.setOptions({{
             gfm: true,
             breaks: true,
@@ -232,11 +163,7 @@ def generate_full_html(rendered_text, title="Exported Document"):
                 return hljs.highlightAuto(code).value;
             }}
         }});
-        
-        // Render markdown
-        document.getElementById('content').innerHTML = marked.parse(rawContent);
-        
-        // Render KaTeX math
+        document.getElementById('content').innerHTML = marked.parse({repr(rendered_text)});
         document.addEventListener("DOMContentLoaded", function() {{
             renderMathInElement(document.getElementById('content'), {{
                 delimiters: [
@@ -247,7 +174,6 @@ def generate_full_html(rendered_text, title="Exported Document"):
                 ],
                 throwOnError: false
             }});
-            // Highlight any remaining code blocks
             document.querySelectorAll('pre code').forEach((block) => {{
                 hljs.highlightElement(block);
             }});
@@ -258,9 +184,142 @@ def generate_full_html(rendered_text, title="Exported Document"):
     return html_content
 
 
+def generate_pdf_via_js(rendered_text, title="Exported Document"):
+    """HTML page that auto-generates a PDF using html2pdf.js and also allows manual save."""
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+    <!-- html2pdf.js for direct PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        @media print {{
+            .no-print {{ display: none !important; }}
+        }}
+        body {{
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }}
+        table {{ border-collapse: collapse; width: 100%; margin: 15px 0; }}
+        th, td {{ border: 1px solid #ccc; padding: 10px 14px; text-align: left; }}
+        pre {{ background: #f6f8fa; padding: 14px; border-radius: 6px; overflow-x: auto; border: 1px solid #e1e4e8; }}
+        code {{ font-family: Consolas, monospace; font-size: 0.9em; }}
+        :not(pre) > code {{ background: #f0f0f0; padding: 2px 5px; border-radius: 3px; }}
+        blockquote {{ border-left: 4px solid #ccc; padding: 8px 16px; margin: 10px 0; }}
+        img {{ max-width: 100%; height: auto; }}
+        .katex-display {{ overflow-x: auto; }}
+        hr {{ border: none; border-top: 1px solid #ccc; margin: 2em 0; }}
+
+        .toolbar {{
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: #f8f8f8;
+            border-bottom: 1px solid #ddd;
+            padding: 12px 20px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            z-index: 9999;
+            flex-wrap: wrap;
+        }}
+        .toolbar button {{
+            background: #333;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            font-weight: bold;
+        }}
+        .toolbar button:hover {{ background: #555; }}
+        .toolbar .status {{
+            font-size: 0.85em;
+            margin-left: 10px;
+        }}
+        #content {{ margin-top: 70px; }}
+    </style>
+</head>
+<body>
+    <div class="toolbar no-print">
+        <button onclick="downloadPDF()">📥 Download as PDF</button>
+        <button onclick="window.print()">🖨️ Print / Save as PDF</button>
+        <span class="status" id="status"></span>
+    </div>
+
+    <div id="content"></div>
+
+    <script>
+        marked.setOptions({{
+            gfm: true,
+            breaks: true,
+            highlight: function(code, lang) {{
+                if (lang && hljs.getLanguage(lang)) {{
+                    try {{ return hljs.highlight(code, {{ language: lang }}).value; }} catch(e) {{}}
+                }}
+                return hljs.highlightAuto(code).value;
+            }}
+        }});
+        document.getElementById('content').innerHTML = marked.parse({repr(rendered_text)});
+
+        document.addEventListener("DOMContentLoaded", function() {{
+            renderMathInElement(document.getElementById('content'), {{
+                delimiters: [
+                    {{ left: "$$", right: "$$", display: true }},
+                    {{ left: "$", right: "$", display: false }},
+                    {{ left: "\\\\(", right: "\\\\)", display: false }},
+                    {{ left: "\\\\[", right: "\\\\]", display: true }}
+                ],
+                throwOnError: false
+            }});
+            document.querySelectorAll('pre code').forEach((block) => {{
+                hljs.highlightElement(block);
+            }});
+        }});
+
+        function downloadPDF() {{
+            const status = document.getElementById('status');
+            status.textContent = '⏳ Generating PDF... please wait.';
+            status.style.color = '#333';
+
+            const element = document.getElementById('content');
+            const opt = {{
+                margin:       [10, 10, 10, 10],
+                filename:     '{title}.pdf',
+                image:        {{ type: 'jpeg', quality: 0.98 }},
+                html2canvas:  {{ scale: 2, useCORS: true, logging: false }},
+                jsPDF:        {{ unit: 'mm', format: 'a4', orientation: 'portrait' }},
+                pagebreak:    {{ mode: ['avoid-all', 'css', 'legacy'] }}
+            }};
+
+            html2pdf().set(opt).from(element).save().then(function() {{
+                status.textContent = '✅ PDF downloaded!';
+                status.style.color = 'green';
+                setTimeout(() => {{ status.textContent = ''; }}, 3000);
+            }}).catch(function(err) {{
+                status.textContent = '❌ Error: ' + err.message;
+                status.style.color = 'red';
+            }});
+        }}
+    </script>
+</body>
+</html>"""
+    return html_content
+
+
 def generate_rich_html_for_copy(rendered_text):
-    """Generates an HTML fragment optimized for clipboard copy that preserves
-    rendering when pasted into rich-text editors like Google Docs, Word, Outlook, etc."""
+    """Generates clean HTML for clipboard copy — no forced colors."""
     html_fragment = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -272,18 +331,13 @@ def generate_rich_html_for_copy(rendered_text):
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css">
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
 <style>
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; color: #333; padding: 20px; max-width: 800px; }}
-h1 {{ color: #1a1a2e; border-bottom: 2px solid #009879; padding-bottom: 8px; }}
-h2 {{ color: #16213e; }}
-h3 {{ color: #1a1a2e; }}
+body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; padding: 20px; max-width: 800px; }}
 table {{ border-collapse: collapse; width: 100%; margin: 15px 0; }}
-thead tr {{ background-color: #009879; color: #fff; }}
-th, td {{ border: 1px solid #ddd; padding: 10px 14px; }}
-tbody tr:nth-of-type(even) {{ background-color: #f9f9f9; }}
-blockquote {{ border-left: 4px solid #009879; padding: 8px 16px; margin: 10px 0; background: #f0f9f6; }}
+th, td {{ border: 1px solid #ccc; padding: 10px 14px; }}
+blockquote {{ border-left: 4px solid #ccc; padding: 8px 16px; margin: 10px 0; }}
 pre {{ background: #f6f8fa; padding: 14px; border-radius: 6px; overflow-x: auto; border: 1px solid #e1e4e8; }}
 code {{ font-family: Consolas, monospace; font-size: 0.9em; }}
-:not(pre) > code {{ background: #eff1f3; padding: 2px 5px; border-radius: 3px; }}
+:not(pre) > code {{ background: #f0f0f0; padding: 2px 5px; border-radius: 3px; }}
 .katex-display {{ overflow-x: auto; }}
 </style>
 </head>
@@ -312,111 +366,15 @@ document.addEventListener("DOMContentLoaded", function() {{
 
 
 def generate_txt(raw_text):
-    """Returns plain text (strips nothing — keeps raw markdown/latex as-is)."""
     return raw_text
 
 
 def generate_md(raw_text):
-    """Returns the text as a .md file content."""
     return raw_text
 
 
-def generate_pdf_html(rendered_text, title="Exported Document"):
-    """Generates an HTML page with a print-to-PDF button built in, 
-    so the user can save a perfect PDF from the browser."""
-    pdf_html = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title}</title>
-    
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css">
-    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
-    
-    <style>
-        @media print {{
-            .no-print {{ display: none !important; }}
-            body {{ padding: 0; margin: 0; }}
-        }}
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            line-height: 1.8;
-            color: #333;
-        }}
-        h1 {{ font-size: 2em; margin: 0.8em 0 0.4em; color: #1a1a2e; border-bottom: 2px solid #009879; padding-bottom: 8px; }}
-        h2 {{ font-size: 1.5em; margin: 0.7em 0 0.3em; color: #16213e; }}
-        h3 {{ font-size: 1.2em; margin: 0.6em 0 0.3em; }}
-        p {{ margin: 0.5em 0; }}
-        blockquote {{ border-left: 4px solid #009879; padding: 8px 16px; margin: 10px 0; background: #f0f9f6; }}
-        table {{ border-collapse: collapse; width: 100%; margin: 15px 0; }}
-        thead tr {{ background-color: #009879; color: #fff; }}
-        th, td {{ border: 1px solid #ddd; padding: 10px 14px; }}
-        tbody tr:nth-of-type(even) {{ background-color: #f9f9f9; }}
-        pre {{ background: #f6f8fa; padding: 14px; border-radius: 6px; overflow-x: auto; border: 1px solid #e1e4e8; }}
-        code {{ font-family: Consolas, monospace; font-size: 0.9em; }}
-        :not(pre) > code {{ background: #eff1f3; padding: 2px 5px; border-radius: 3px; }}
-        .katex-display {{ overflow-x: auto; }}
-        .print-btn {{
-            position: fixed; top: 20px; right: 20px; z-index: 1000;
-            background: #009879; color: white; border: none; padding: 12px 24px;
-            border-radius: 8px; font-size: 1em; cursor: pointer; font-weight: bold;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }}
-        .print-btn:hover {{ background: #007a63; }}
-        .print-instructions {{
-            position: fixed; top: 70px; right: 20px; z-index: 1000;
-            background: #fff3cd; color: #856404; padding: 10px 15px;
-            border-radius: 6px; font-size: 0.85em; max-width: 280px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #ffc107;
-        }}
-    </style>
-</head>
-<body>
-    <button class="print-btn no-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
-    <div class="print-instructions no-print">
-        💡 <strong>Tip:</strong> Click the button above, then choose <em>"Save as PDF"</em> as the destination in the print dialog.
-    </div>
-
-    <div id="content"></div>
-
-    <script>
-        marked.setOptions({{ gfm: true, breaks: true, highlight: function(code, lang) {{
-            if (lang && hljs.getLanguage(lang)) {{ try {{ return hljs.highlight(code, {{ language: lang }}).value; }} catch(e) {{}} }}
-            return hljs.highlightAuto(code).value;
-        }} }});
-        document.getElementById('content').innerHTML = marked.parse({repr(rendered_text)});
-        document.addEventListener("DOMContentLoaded", function() {{
-            renderMathInElement(document.getElementById('content'), {{
-                delimiters: [
-                    {{ left: "$$", right: "$$", display: true }},
-                    {{ left: "$", right: "$", display: false }},
-                    {{ left: "\\\\(", right: "\\\\)", display: false }},
-                    {{ left: "\\\\[", right: "\\\\]", display: true }}
-                ],
-                throwOnError: false
-            }});
-            document.querySelectorAll('pre code').forEach((block) => {{ hljs.highlightElement(block); }});
-        }});
-    </script>
-</body>
-</html>"""
-    return pdf_html
-
-
 def generate_rst(raw_text):
-    """Basic conversion of markdown to reStructuredText format."""
     text = raw_text
-    
-    # Convert headers: # Header -> Header\n======
     def replace_header(match):
         level = len(match.group(1))
         title = match.group(2).strip()
@@ -426,37 +384,21 @@ def generate_rst(raw_text):
         if level == 1:
             return f"{underline}\n{title}\n{underline}"
         return f"{title}\n{underline}"
-    
     text = re.sub(r'^(#{1,5})\s+(.+)$', replace_header, text, flags=re.MULTILINE)
-    
-    # Bold: **text** -> **text**  (same in rst)
-    # Italic: *text* -> *text*  (same in rst)
-    
-    # Inline code: `code` -> ``code``
     text = re.sub(r'(?<!`)`(?!`)([^`]+)(?<!`)`(?!`)', r'``\1``', text)
-    
-    # Links: [text](url) -> `text <url>`_
     text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'`\1 <\2>`_', text)
-    
-    # Images: ![alt](url) -> .. image:: url\n   :alt: alt
     def replace_image(match):
         alt = match.group(1)
         url = match.group(2)
         return f".. image:: {url}\n   :alt: {alt}"
     text = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', replace_image, text)
-    
-    # Horizontal rules
     text = re.sub(r'^---+$', '-' * 40, text, flags=re.MULTILINE)
     text = re.sub(r'^\*\*\*+$', '-' * 40, text, flags=re.MULTILINE)
-    
     return text
 
 
 def generate_latex_doc(raw_text):
-    """Basic conversion of markdown text to a LaTeX document."""
     text = raw_text
-    
-    # Preamble
     preamble = r"""\documentclass[11pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -482,57 +424,176 @@ def generate_latex_doc(raw_text):
 """
     postamble = r"""
 \end{document}"""
-    
-    # Convert headers
     text = re.sub(r'^# (.+)$', r'\\section{\1}', text, flags=re.MULTILINE)
     text = re.sub(r'^## (.+)$', r'\\subsection{\1}', text, flags=re.MULTILINE)
     text = re.sub(r'^### (.+)$', r'\\subsubsection{\1}', text, flags=re.MULTILINE)
     text = re.sub(r'^#### (.+)$', r'\\paragraph{\1}', text, flags=re.MULTILINE)
-    
-    # Bold and Italic
     text = re.sub(r'\*\*\*(.+?)\*\*\*', r'\\textbf{\\textit{\1}}', text)
     text = re.sub(r'\*\*(.+?)\*\*', r'\\textbf{\1}', text)
     text = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'\\textit{\1}', text)
-    
-    # Inline code
     text = re.sub(r'`([^`]+)`', r'\\texttt{\1}', text)
-    
-    # Links
     text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'\\href{\2}{\1}', text)
-    
-    # Code blocks
     def replace_code_block(match):
         lang = match.group(1) or ""
         code = match.group(2)
         if lang:
             return f"\\begin{{lstlisting}}[language={lang}]\n{code}\n\\end{{lstlisting}}"
         return f"\\begin{{lstlisting}}\n{code}\n\\end{{lstlisting}}"
-    
     text = re.sub(r'```(\w*)\n(.*?)```', replace_code_block, text, flags=re.DOTALL)
-    
-    # Horizontal rules
     text = re.sub(r'^---+$', r'\\hrulefill', text, flags=re.MULTILINE)
-    
-    # Blockquotes
     text = re.sub(r'^> (.+)$', r'\\begin{quote}\n\1\n\\end{quote}', text, flags=re.MULTILINE)
-    
     return preamble + text + postamble
 
 
 # ==========================================
-# 5. COPY-TO-CLIPBOARD COMPONENT
+# 5. PDF GENERATION (Direct in Streamlit)
+# ==========================================
+def generate_pdf_bytes(rendered_text, title="Exported Document"):
+    """
+    Attempts to generate a real PDF using available libraries.
+    Falls back gracefully with clear user guidance.
+    """
+    # Try fpdf2 first (lightweight, no system deps)
+    try:
+        from fpdf import FPDF
+        
+        class PDF(FPDF):
+            def header(self):
+                self.set_font('Helvetica', 'B', 14)
+                self.cell(0, 10, title, new_x="LMARGIN", new_y="NEXT", align='C')
+                self.ln(5)
+            
+            def footer(self):
+                self.set_y(-15)
+                self.set_font('Helvetica', 'I', 8)
+                self.cell(0, 10, f'Page {self.page_no()}/{{nb}}', align='C')
+        
+        pdf = PDF()
+        pdf.alias_nb_pages()
+        pdf.add_page()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        
+        lines = rendered_text.split('\n')
+        for line in lines:
+            stripped = line.strip()
+            
+            # Headers
+            if stripped.startswith('# '):
+                pdf.set_font('Helvetica', 'B', 18)
+                pdf.multi_cell(0, 10, stripped[2:])
+                pdf.ln(3)
+            elif stripped.startswith('## '):
+                pdf.set_font('Helvetica', 'B', 15)
+                pdf.multi_cell(0, 9, stripped[3:])
+                pdf.ln(2)
+            elif stripped.startswith('### '):
+                pdf.set_font('Helvetica', 'B', 13)
+                pdf.multi_cell(0, 8, stripped[4:])
+                pdf.ln(2)
+            elif stripped.startswith('#### '):
+                pdf.set_font('Helvetica', 'B', 12)
+                pdf.multi_cell(0, 7, stripped[5:])
+                pdf.ln(1)
+            elif stripped.startswith('---') or stripped.startswith('***'):
+                pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+                pdf.ln(5)
+            elif stripped.startswith('> '):
+                pdf.set_font('Helvetica', 'I', 11)
+                pdf.set_x(20)
+                pdf.multi_cell(170, 7, stripped[2:])
+                pdf.ln(2)
+                pdf.set_font('Helvetica', '', 11)
+            elif stripped.startswith('- ') or stripped.startswith('* '):
+                pdf.set_font('Helvetica', '', 11)
+                pdf.set_x(15)
+                pdf.multi_cell(175, 7, f"  •  {stripped[2:]}")
+            elif re.match(r'^\d+\.\s', stripped):
+                pdf.set_font('Helvetica', '', 11)
+                pdf.set_x(15)
+                pdf.multi_cell(175, 7, f"  {stripped}")
+            elif stripped.startswith('```'):
+                pdf.set_font('Courier', '', 9)
+            elif stripped == '':
+                pdf.ln(3)
+            else:
+                # Clean markdown bold/italic for plain text
+                clean = re.sub(r'\*\*\*(.+?)\*\*\*', r'\1', stripped)
+                clean = re.sub(r'\*\*(.+?)\*\*', r'\1', clean)
+                clean = re.sub(r'\*(.+?)\*', r'\1', clean)
+                clean = re.sub(r'`(.+?)`', r'\1', clean)
+                clean = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', clean)
+                
+                # Remove $$ math delimiters but keep content
+                clean = re.sub(r'\$\$(.+?)\$\$', r'[Math: \1]', clean)
+                clean = re.sub(r'\$(.+?)\$', r'\1', clean)
+                
+                pdf.set_font('Helvetica', '', 11)
+                # Handle encoding
+                try:
+                    pdf.multi_cell(0, 7, clean)
+                except Exception:
+                    safe = clean.encode('latin-1', 'replace').decode('latin-1')
+                    pdf.multi_cell(0, 7, safe)
+        
+        return pdf.output()
+    
+    except ImportError:
+        pass
+    
+    # Try reportlab
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.units import mm
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4,
+                                leftMargin=20*mm, rightMargin=20*mm,
+                                topMargin=20*mm, bottomMargin=20*mm)
+        styles = getSampleStyleSheet()
+        story = []
+        
+        for line in rendered_text.split('\n'):
+            stripped = line.strip()
+            if stripped.startswith('# '):
+                story.append(Paragraph(stripped[2:], styles['Heading1']))
+            elif stripped.startswith('## '):
+                story.append(Paragraph(stripped[3:], styles['Heading2']))
+            elif stripped.startswith('### '):
+                story.append(Paragraph(stripped[4:], styles['Heading3']))
+            elif stripped == '':
+                story.append(Spacer(1, 6*mm))
+            else:
+                clean = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', stripped)
+                clean = re.sub(r'\*(.+?)\*', r'<i>\1</i>', clean)
+                clean = re.sub(r'`(.+?)`', r'<font face="Courier">\1</font>', clean)
+                try:
+                    story.append(Paragraph(clean, styles['BodyText']))
+                except Exception:
+                    story.append(Paragraph(stripped, styles['BodyText']))
+        
+        doc.build(story)
+        return buffer.getvalue()
+    
+    except ImportError:
+        pass
+    
+    # If nothing is available, return None
+    return None
+
+
+# ==========================================
+# 6. COPY BUTTON COMPONENT
 # ==========================================
 def render_copy_button(rendered_text):
-    """Renders a copy button that copies rich HTML to clipboard,
-    so pasting into Google Docs / Word / etc. preserves formatting."""
-    
     rich_html = generate_rich_html_for_copy(rendered_text)
     b64_html = base64.b64encode(rich_html.encode('utf-8')).decode('utf-8')
     
     copy_component = f"""
     <div style="position: relative; display: inline-block; width: 100%;">
         <button id="copyBtn" onclick="copyRenderedContent()" style="
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #333;
             color: white;
             border: none;
             padding: 10px 22px;
@@ -541,12 +602,11 @@ def render_copy_button(rendered_text):
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
             display: inline-flex;
             align-items: center;
             gap: 8px;
-        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(102,126,234,0.5)'"
-           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(102,126,234,0.4)'">
+        " onmouseover="this.style.background='#555'"
+           onmouseout="this.style.background='#333'">
             <span id="copyIcon">📋</span> <span id="copyText">Copy Rendered Content</span>
         </button>
         <span id="copyStatus" style="margin-left: 12px; font-weight: bold; opacity: 0; transition: opacity 0.3s;"></span>
@@ -560,11 +620,9 @@ def render_copy_button(rendered_text):
         const status = document.getElementById('copyStatus');
         
         try {{
-            // Decode the base64 HTML
             const b64 = "{b64_html}";
             const htmlContent = atob(b64);
             
-            // Create a temporary hidden iframe to render the HTML
             const iframe = document.createElement('iframe');
             iframe.style.position = 'fixed';
             iframe.style.left = '-9999px';
@@ -577,7 +635,6 @@ def render_copy_button(rendered_text):
             iframe.contentDocument.write(htmlContent);
             iframe.contentDocument.close();
             
-            // Wait for content to render
             await new Promise(resolve => setTimeout(resolve, 1500));
             
             const contentDiv = iframe.contentDocument.getElementById('content');
@@ -586,7 +643,6 @@ def render_copy_button(rendered_text):
                 const renderedHTML = contentDiv.innerHTML;
                 const plainText = contentDiv.innerText;
                 
-                // Use Clipboard API with both HTML and plain text
                 try {{
                     const clipboardItem = new ClipboardItem({{
                         'text/html': new Blob([renderedHTML], {{ type: 'text/html' }}),
@@ -594,53 +650,48 @@ def render_copy_button(rendered_text):
                     }});
                     await navigator.clipboard.write([clipboardItem]);
                     
-                    // Success feedback
                     icon.textContent = '✅';
                     text.textContent = 'Copied!';
-                    status.textContent = '✨ Rich content copied — paste into Docs, Word, Outlook, etc.';
-                    status.style.color = '#4CAF50';
+                    status.textContent = 'Rich content copied — paste into Docs, Word, Outlook, etc.';
+                    status.style.color = 'green';
                     status.style.opacity = '1';
-                    btn.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
+                    btn.style.background = '#2e7d32';
                     
                 }} catch (clipErr) {{
-                    // Fallback: copy as plain text
                     await navigator.clipboard.writeText(plainText);
                     icon.textContent = '📝';
                     text.textContent = 'Copied as Text';
-                    status.textContent = '⚠️ Copied as plain text (browser blocked rich copy)';
-                    status.style.color = '#ff9800';
+                    status.textContent = 'Copied as plain text (browser blocked rich copy)';
+                    status.style.color = '#b37000';
                     status.style.opacity = '1';
-                    btn.style.background = 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)';
+                    btn.style.background = '#b37000';
                 }}
             }} else {{
                 throw new Error('Content element not found');
             }}
             
-            // Remove iframe
             document.body.removeChild(iframe);
             
-            // Reset button after 3 seconds
             setTimeout(() => {{
                 icon.textContent = '📋';
                 text.textContent = 'Copy Rendered Content';
                 status.style.opacity = '0';
-                btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                btn.style.background = '#333';
             }}, 3000);
             
         }} catch (err) {{
-            // Final fallback
             icon.textContent = '❌';
             text.textContent = 'Copy Failed';
             status.textContent = 'Error: ' + err.message;
-            status.style.color = '#f44336';
+            status.style.color = 'red';
             status.style.opacity = '1';
-            btn.style.background = 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)';
+            btn.style.background = '#c62828';
             
             setTimeout(() => {{
                 icon.textContent = '📋';
                 text.textContent = 'Copy Rendered Content';
                 status.style.opacity = '0';
-                btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                btn.style.background = '#333';
             }}, 3000);
         }}
     }}
@@ -650,7 +701,7 @@ def render_copy_button(rendered_text):
 
 
 # ==========================================
-# 6. USER INTERFACE
+# 7. USER INTERFACE
 # ==========================================
 st.title("🔬 Advanced Markdown & LaTeX Renderer")
 st.markdown("Paste your raw Markdown, LaTeX, code blocks, and HTML below. Click **Render** to parse and display the formatted document.")
@@ -667,7 +718,15 @@ with st.sidebar:
     st.header("📦 Export Settings")
     export_format = st.selectbox(
         "Choose Export Format",
-        ["HTML (Rich Document)", "PDF (Print-Ready)", "Plain Text (.txt)", "Markdown (.md)", "reStructuredText (.rst)", "LaTeX (.tex)"],
+        [
+            "PDF (Direct Download)",
+            "PDF (Browser Print-Ready HTML)",
+            "HTML (Rich Document)",
+            "Plain Text (.txt)",
+            "Markdown (.md)",
+            "reStructuredText (.rst)",
+            "LaTeX (.tex)"
+        ],
         index=0
     )
     export_filename = st.text_input("File Name (without extension)", value="rendered_document")
@@ -681,6 +740,16 @@ with st.sidebar:
         "- **LaTeX**: Inline `$E=mc^2$` and Block `$$math$$`\n"
         "- **HTML**: Standard web tags"
     )
+    
+    st.markdown("---")
+    st.markdown("### 💡 PDF Tips")
+    st.markdown(
+        "**Direct Download** uses `fpdf2` or `reportlab` if installed.\n\n"
+        "**Browser Print-Ready** opens an HTML file with a PDF save button — "
+        "best for complex math/tables.\n\n"
+        "Install for best results:\n"
+        "```\npip install fpdf2\n```"
+    )
 
 # --- Initialize Session State ---
 if 'raw_text' not in st.session_state:
@@ -690,7 +759,7 @@ if 'rendered_text' not in st.session_state:
 if 'is_rendered' not in st.session_state:
     st.session_state.is_rendered = False
 
-# --- Callback for the Render Button ---
+# --- Callbacks ---
 def on_render_click():
     st.session_state.raw_text = st.session_state.input_text_area
     if enable_latex_fix:
@@ -699,7 +768,6 @@ def on_render_click():
         st.session_state.rendered_text = st.session_state.raw_text
     st.session_state.is_rendered = True
 
-# --- Callback for the Clear Button ---
 def on_clear_click():
     st.session_state.raw_text = ""
     st.session_state.rendered_text = ""
@@ -734,7 +802,7 @@ if view_mode == "Split Screen":
             else:
                 st.info("✏️ Paste your text on the left and click **🚀 Render** to see the output here.")
 
-else:  # Full Render Only Mode
+else:
     st.subheader("📝 Raw Input")
     with st.expander("Click to Edit Raw Text", expanded=not st.session_state.is_rendered):
         st.text_area(
@@ -759,16 +827,17 @@ else:  # Full Render Only Mode
     else:
         st.info("✏️ Paste your text above and click **🚀 Render** to see the output here.")
 
+
 # ==========================================
-# 7. FOOTER: COPY, EXPORT & METRICS
+# 8. FOOTER: COPY, EXPORT & METRICS
 # ==========================================
 st.markdown("---")
 
 if st.session_state.is_rendered and st.session_state.rendered_text.strip():
     
-    # --- Copy Button Section ---
+    # --- Copy Button ---
     st.subheader("📋 Copy Rendered Content")
-    st.caption("Click below to copy the fully rendered content to your clipboard. When you paste it into Google Docs, Word, Outlook, or any rich-text editor, the formatting (headings, tables, code, math) will be preserved.")
+    st.caption("Copies rich HTML to clipboard. Paste into Google Docs, Word, Outlook, etc. with formatting preserved.")
     st.components.v1.html(render_copy_button(st.session_state.rendered_text), height=60)
     
     st.markdown("---")
@@ -778,49 +847,64 @@ if st.session_state.is_rendered and st.session_state.rendered_text.strip():
     
     rendered = st.session_state.rendered_text
     raw = st.session_state.raw_text
-    fname = export_filename if export_filename.strip() else "rendered_document"
+    fname = export_filename.strip() if export_filename.strip() else "rendered_document"
     
     if export_format == "HTML (Rich Document)":
         file_content = generate_full_html(rendered, title=fname)
         file_bytes = file_content.encode('utf-8')
         file_ext = "html"
         mime = "text/html"
-        description = "A fully self-contained HTML file with KaTeX math rendering, syntax-highlighted code blocks, styled tables, and professional formatting. Opens in any browser."
+        description = "Self-contained HTML file with math, code highlighting, and clean styling. Opens in any browser. Includes a built-in Print/PDF button."
         
-    elif export_format == "PDF (Print-Ready)":
-        file_content = generate_pdf_html(rendered, title=fname)
+    elif export_format == "PDF (Direct Download)":
+        pdf_bytes = generate_pdf_bytes(rendered, title=fname)
+        if pdf_bytes is not None:
+            file_bytes = pdf_bytes
+            file_ext = "pdf"
+            mime = "application/pdf"
+            description = "PDF generated directly. For complex math/tables, consider the 'Browser Print-Ready HTML' option for best results."
+        else:
+            # Fallback: provide the print-ready HTML
+            file_content = generate_pdf_via_js(rendered, title=fname)
+            file_bytes = file_content.encode('utf-8')
+            file_ext = "html"
+            mime = "text/html"
+            description = "⚠️ No PDF library found (`fpdf2` or `reportlab`). Downloading a Print-Ready HTML instead. Open it in your browser and click 'Download as PDF'. Install `fpdf2` with: `pip install fpdf2`"
+        
+    elif export_format == "PDF (Browser Print-Ready HTML)":
+        file_content = generate_pdf_via_js(rendered, title=fname)
         file_bytes = file_content.encode('utf-8')
         file_ext = "html"
         mime = "text/html"
-        description = "An HTML file with a built-in **Print / Save as PDF** button. Open the downloaded file in your browser, click the button, and choose 'Save as PDF' in the print dialog. This ensures perfect rendering of math, code, and tables."
+        description = "An HTML file with **html2pdf.js** built in. Open it in your browser → click '📥 Download as PDF' for a client-side PDF, or use '🖨️ Print → Save as PDF'. Best for complex math and tables."
         
     elif export_format == "Plain Text (.txt)":
         file_content = generate_txt(raw)
         file_bytes = file_content.encode('utf-8')
         file_ext = "txt"
         mime = "text/plain"
-        description = "A plain text file containing the raw content as-is. No formatting is applied."
+        description = "Plain text file with raw content as-is."
         
     elif export_format == "Markdown (.md)":
         file_content = generate_md(raw)
         file_bytes = file_content.encode('utf-8')
         file_ext = "md"
         mime = "text/markdown"
-        description = "A Markdown (.md) file that can be opened in any Markdown editor or viewer (VS Code, Typora, Obsidian, GitHub, etc.)."
+        description = "Markdown file for editors like VS Code, Typora, Obsidian, GitHub."
         
     elif export_format == "reStructuredText (.rst)":
         file_content = generate_rst(raw)
         file_bytes = file_content.encode('utf-8')
         file_ext = "rst"
         mime = "text/x-rst"
-        description = "A reStructuredText file commonly used in Python documentation (Sphinx). Basic conversion from Markdown is applied."
+        description = "reStructuredText for Sphinx/Python documentation. Basic conversion from Markdown."
         
     elif export_format == "LaTeX (.tex)":
         file_content = generate_latex_doc(raw)
         file_bytes = file_content.encode('utf-8')
         file_ext = "tex"
         mime = "application/x-tex"
-        description = "A LaTeX (.tex) document with standard preamble. Can be compiled with pdflatex, xelatex, or lualatex. Includes packages for math, code listings, hyperlinks, and tables."
+        description = "LaTeX document with preamble. Compile with pdflatex/xelatex/lualatex."
     
     st.info(f"📄 **{export_format}**: {description}")
     
