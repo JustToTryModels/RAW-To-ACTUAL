@@ -113,7 +113,6 @@ def generate_full_html(rendered_text, title="Exported Document"):
         .katex-display {{ overflow-x: auto; overflow-y: hidden; padding: 10px 0; }}
         hr {{ border: none; border-top: 1px solid #ccc; margin: 2em 0; }}
 
-        /* PDF Button */
         @media print {{
             .no-print {{ display: none !important; }}
         }}
@@ -198,7 +197,6 @@ def generate_pdf_via_js(rendered_text, title="Exported Document"):
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css">
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
-    <!-- html2pdf.js for direct PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @media print {{
@@ -453,7 +451,6 @@ def generate_pdf_bytes(rendered_text, title="Exported Document"):
     Attempts to generate a real PDF using available libraries.
     Falls back gracefully with clear user guidance.
     """
-    # Try fpdf2 first (lightweight, no system deps)
     try:
         from fpdf import FPDF
         
@@ -477,7 +474,6 @@ def generate_pdf_bytes(rendered_text, title="Exported Document"):
         for line in lines:
             stripped = line.strip()
             
-            # Headers
             if stripped.startswith('# '):
                 pdf.set_font('Helvetica', 'B', 18)
                 pdf.multi_cell(0, 10, stripped[2:])
@@ -516,19 +512,15 @@ def generate_pdf_bytes(rendered_text, title="Exported Document"):
             elif stripped == '':
                 pdf.ln(3)
             else:
-                # Clean markdown bold/italic for plain text
                 clean = re.sub(r'\*\*\*(.+?)\*\*\*', r'\1', stripped)
                 clean = re.sub(r'\*\*(.+?)\*\*', r'\1', clean)
                 clean = re.sub(r'\*(.+?)\*', r'\1', clean)
                 clean = re.sub(r'`(.+?)`', r'\1', clean)
                 clean = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', clean)
-                
-                # Remove $$ math delimiters but keep content
                 clean = re.sub(r'\$\$(.+?)\$\$', r'[Math: \1]', clean)
                 clean = re.sub(r'\$(.+?)\$', r'\1', clean)
                 
                 pdf.set_font('Helvetica', '', 11)
-                # Handle encoding
                 try:
                     pdf.multi_cell(0, 7, clean)
                 except Exception:
@@ -540,7 +532,6 @@ def generate_pdf_bytes(rendered_text, title="Exported Document"):
     except ImportError:
         pass
     
-    # Try reportlab
     try:
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.units import mm
@@ -579,12 +570,11 @@ def generate_pdf_bytes(rendered_text, title="Exported Document"):
     except ImportError:
         pass
     
-    # If nothing is available, return None
     return None
 
 
 # ==========================================
-# 6. COPY BUTTON COMPONENT (FIXED: UTF-8 + KaTeX cleanup)
+# 6. COPY BUTTON COMPONENT (FIXED: UTF-8 + KaTeX + bold)
 # ==========================================
 def render_copy_button(rendered_text):
     rich_html = generate_rich_html_for_copy(rendered_text)
@@ -613,7 +603,7 @@ def render_copy_button(rendered_text):
     </div>
     
     <script>
-    // ---- FIX 1: Proper UTF-8 base64 decoder (handles emojis & all Unicode) ----
+    /* ---- UTF-8 safe base64 decoder ---- */
     function b64DecodeUnicode(base64str) {{
         var binaryStr = atob(base64str);
         var bytes = new Uint8Array(binaryStr.length);
@@ -623,70 +613,138 @@ def render_copy_button(rendered_text):
         return new TextDecoder('utf-8').decode(bytes);
     }}
 
-    // ---- FIX 2: Strip KaTeX rendered spans & replace with plain LaTeX source ----
+    /* ---- Clean DOM for Google Docs paste ---- */
     function cleanForGoogleDocs(containerEl) {{
         var clone = containerEl.cloneNode(true);
 
-        // 2a. Replace KaTeX DISPLAY math with a clean <p> of the LaTeX source
+        /* --- A. Replace KaTeX DISPLAY math with plain LaTeX source --- */
         var displayEls = clone.querySelectorAll('.katex-display');
         for (var i = 0; i < displayEls.length; i++) {{
             var el = displayEls[i];
             var annotation = el.querySelector('annotation[encoding="application/x-tex"]');
-            if (annotation) {{
-                var p = document.createElement('p');
-                p.style.fontFamily = '"Courier New", Courier, monospace';
-                p.style.whiteSpace = 'pre-wrap';
-                p.style.margin = '10px 0';
-                p.textContent = annotation.textContent.trim();
-                el.parentNode.replaceChild(p, el);
-            }} else {{
-                // No annotation found — just grab visible text
-                var fallback = el.textContent || '';
-                var p2 = document.createElement('p');
-                p2.style.fontFamily = '"Courier New", Courier, monospace';
-                p2.textContent = fallback.trim();
-                el.parentNode.replaceChild(p2, el);
-            }}
+            var p = document.createElement('p');
+            p.style.fontFamily = '"Courier New", Courier, monospace';
+            p.style.fontWeight = 'normal';
+            p.style.whiteSpace = 'pre-wrap';
+            p.style.margin = '10px 0';
+            p.textContent = annotation ? annotation.textContent.trim() : (el.textContent || '').trim();
+            el.parentNode.replaceChild(p, el);
         }}
 
-        // 2b. Replace remaining INLINE KaTeX with a clean <span>
+        /* --- B. Replace INLINE KaTeX with plain LaTeX source --- */
         var inlineEls = clone.querySelectorAll('.katex');
         for (var j = 0; j < inlineEls.length; j++) {{
             var iel = inlineEls[j];
             var ann = iel.querySelector('annotation[encoding="application/x-tex"]');
-            if (ann) {{
-                var span = document.createElement('span');
-                span.style.fontFamily = '"Courier New", Courier, monospace';
-                span.textContent = ann.textContent.trim();
-                iel.parentNode.replaceChild(span, iel);
-            }} else {{
-                var fallbackText = iel.textContent || '';
-                var span2 = document.createElement('span');
-                span2.style.fontFamily = '"Courier New", Courier, monospace';
-                span2.textContent = fallbackText.trim();
-                iel.parentNode.replaceChild(span2, iel);
-            }}
+            var span = document.createElement('span');
+            span.style.fontFamily = '"Courier New", Courier, monospace';
+            span.style.fontWeight = 'normal';
+            span.textContent = ann ? ann.textContent.trim() : (iel.textContent || '').trim();
+            iel.parentNode.replaceChild(span, iel);
         }}
 
-        // 2c. Remove any leftover KaTeX-internal elements that may have survived
+        /* --- C. Remove leftover KaTeX internals --- */
         var junkSelectors = '.katex-mathml, .katex-html, .strut, .mspace, .vlist, .vlist-t, .vlist-t2, .vlist-r, .vlist-s, .pstrut, .frac-line, .sizing, .reset-size, .mtight';
         var junkEls = clone.querySelectorAll(junkSelectors);
         for (var k = junkEls.length - 1; k >= 0; k--) {{
             var junk = junkEls[k];
-            // Move children up before removing, so we don't lose visible text
             while (junk.firstChild) {{
                 junk.parentNode.insertBefore(junk.firstChild, junk);
             }}
             junk.parentNode.removeChild(junk);
         }}
 
-        // 2d. Clean zero-width / invisible Unicode chars that cause stray symbols
+        /* --- D. Strip invisible Unicode characters --- */
         var walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT, null, false);
         while (walker.nextNode()) {{
-            // Remove zero-width spaces, joiners, BOM, object replacement, etc.
             walker.currentNode.nodeValue = walker.currentNode.nodeValue
                 .replace(/[\\u200B\\u200C\\u200D\\u2060\\uFEFF\\uFFFC\\uFFFD]/g, '')
-                .replace(/\\u00A0/g, ' ');   // non-breaking space → normal space
+                .replace(/\\u00A0/g, ' ');
+        }}
+
+        /* =========================================================
+           E. FIX BOLD: Explicitly set font-weight on every element.
+              Google Docs ignores CSS classes/stylesheets — it only
+              respects inline styles.  Without explicit font-weight,
+              Docs guesses (often wrong → everything bold).
+              
+              Strategy:
+              - Root wrapper + every BLOCK element → font-weight:normal
+              - <strong>, <b>, <th>, <h1>-<h6>  → font-weight:bold
+              - Inline elements (<span>, <em>, <a>, <code>) are LEFT
+                ALONE so they correctly inherit from their parent
+                (bold inside <strong>, normal inside <p>).
+           ========================================================= */
+
+        /* E1. Root container: default = normal */
+        clone.style.fontWeight = 'normal';
+        clone.style.fontFamily = 'Arial, sans-serif';
+        clone.style.fontSize = '11pt';
+        clone.style.lineHeight = '1.6';
+
+        /* E2. All block-level elements: explicitly normal */
+        var blockTags = clone.querySelectorAll('p, li, td, div, blockquote, pre, ul, ol, dl, dd, dt, address, figcaption, summary, details, section, article, main, aside, nav, footer, header');
+        for (var bi = 0; bi < blockTags.length; bi++) {{
+            blockTags[bi].style.fontWeight = 'normal';
+        }}
+
+        /* E3. Bold elements: explicitly bold */
+        var boldTags = clone.querySelectorAll('strong, b');
+        for (var bo = 0; bo < boldTags.length; bo++) {{
+            boldTags[bo].style.fontWeight = 'bold';
+        }}
+
+        /* E4. Headings: bold + sized so Docs treats them as headings */
+        var hSizeMap = {{'H1':'24px','H2':'20px','H3':'17px','H4':'14px','H5':'12px','H6':'11px'}};
+        var headingTags = clone.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        for (var hi = 0; hi < headingTags.length; hi++) {{
+            headingTags[hi].style.fontWeight = 'bold';
+            headingTags[hi].style.fontSize = hSizeMap[headingTags[hi].tagName] || '14px';
+        }}
+
+        /* E5. Table headers: bold */
+        var thTags = clone.querySelectorAll('th');
+        for (var ti = 0; ti < thTags.length; ti++) {{
+            thTags[ti].style.fontWeight = 'bold';
+        }}
+
+        /* E6. Italic elements: ensure they don't accidentally become bold */
+        var emTags = clone.querySelectorAll('em, i');
+        for (var ei = 0; ei < emTags.length; ei++) {{
+            var emEl = emTags[ei];
+            /* Only force normal if NOT inside a <strong>/<b> */
+            var parentBold = emEl.closest('strong, b');
+            if (!parentBold) {{
+                emEl.style.fontWeight = 'normal';
+            }}
+            emEl.style.fontStyle = 'italic';
+        }}
+
+        /* E7. Code elements: monospace + normal weight */
+        var codeTags = clone.querySelectorAll('code, pre');
+        for (var ci = 0; ci < codeTags.length; ci++) {{
+            codeTags[ci].style.fontFamily = '"Courier New", Courier, monospace';
+            codeTags[ci].style.fontWeight = 'normal';
+        }}
+
+        /* E8. Links: normal weight + underline */
+        var linkTags = clone.querySelectorAll('a');
+        for (var li = 0; li < linkTags.length; li++) {{
+            var linkEl = linkTags[li];
+            var linkParentBold = linkEl.closest('strong, b');
+            if (!linkParentBold) {{
+                linkEl.style.fontWeight = 'normal';
+            }}
+        }}
+
+        /* E9. Any stray <span> NOT inside <strong>/<b>/heading → normal */
+        var spanTags = clone.querySelectorAll('span');
+        for (var si = 0; si < spanTags.length; si++) {{
+            var sp = spanTags[si];
+            var spanParentBold = sp.closest('strong, b, h1, h2, h3, h4, h5, h6, th');
+            if (!spanParentBold) {{
+                sp.style.fontWeight = 'normal';
+            }}
         }}
 
         return clone;
@@ -700,7 +758,6 @@ def render_copy_button(rendered_text):
         
         try {{
             var b64 = "{b64_html}";
-            // Use the fixed UTF-8 decoder instead of raw atob()
             var htmlContent = b64DecodeUnicode(b64);
             
             var iframe = document.createElement('iframe');
@@ -715,13 +772,11 @@ def render_copy_button(rendered_text):
             iframe.contentDocument.write(htmlContent);
             iframe.contentDocument.close();
             
-            // Wait for marked.js + KaTeX to finish rendering
             await new Promise(function(resolve) {{ setTimeout(resolve, 2000); }});
             
             var contentDiv = iframe.contentDocument.getElementById('content');
             
             if (contentDiv) {{
-                // Clean the content: fix KaTeX artifacts + stray symbols
                 var cleanedContent = cleanForGoogleDocs(contentDiv);
                 var renderedHTML = cleanedContent.innerHTML;
                 var plainText = cleanedContent.innerText;
@@ -947,7 +1002,6 @@ if st.session_state.is_rendered and st.session_state.rendered_text.strip():
             mime = "application/pdf"
             description = "PDF generated directly. For complex math/tables, consider the 'Browser Print-Ready HTML' option for best results."
         else:
-            # Fallback: provide the print-ready HTML
             file_content = generate_pdf_via_js(rendered, title=fname)
             file_bytes = file_content.encode('utf-8')
             file_ext = "html"
