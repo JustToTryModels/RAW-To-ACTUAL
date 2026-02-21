@@ -584,7 +584,7 @@ def generate_pdf_bytes(rendered_text, title="Exported Document"):
 
 
 # ==========================================
-# 6. COPY BUTTON COMPONENT
+# 6. COPY BUTTON COMPONENT (FIXED: UTF-8 + KaTeX cleanup)
 # ==========================================
 def render_copy_button(rendered_text):
     rich_html = generate_rich_html_for_copy(rendered_text)
@@ -613,17 +613,97 @@ def render_copy_button(rendered_text):
     </div>
     
     <script>
+    // ---- FIX 1: Proper UTF-8 base64 decoder (handles emojis & all Unicode) ----
+    function b64DecodeUnicode(base64str) {{
+        var binaryStr = atob(base64str);
+        var bytes = new Uint8Array(binaryStr.length);
+        for (var i = 0; i < binaryStr.length; i++) {{
+            bytes[i] = binaryStr.charCodeAt(i);
+        }}
+        return new TextDecoder('utf-8').decode(bytes);
+    }}
+
+    // ---- FIX 2: Strip KaTeX rendered spans & replace with plain LaTeX source ----
+    function cleanForGoogleDocs(containerEl) {{
+        var clone = containerEl.cloneNode(true);
+
+        // 2a. Replace KaTeX DISPLAY math with a clean <p> of the LaTeX source
+        var displayEls = clone.querySelectorAll('.katex-display');
+        for (var i = 0; i < displayEls.length; i++) {{
+            var el = displayEls[i];
+            var annotation = el.querySelector('annotation[encoding="application/x-tex"]');
+            if (annotation) {{
+                var p = document.createElement('p');
+                p.style.fontFamily = '"Courier New", Courier, monospace';
+                p.style.whiteSpace = 'pre-wrap';
+                p.style.margin = '10px 0';
+                p.textContent = annotation.textContent.trim();
+                el.parentNode.replaceChild(p, el);
+            }} else {{
+                // No annotation found — just grab visible text
+                var fallback = el.textContent || '';
+                var p2 = document.createElement('p');
+                p2.style.fontFamily = '"Courier New", Courier, monospace';
+                p2.textContent = fallback.trim();
+                el.parentNode.replaceChild(p2, el);
+            }}
+        }}
+
+        // 2b. Replace remaining INLINE KaTeX with a clean <span>
+        var inlineEls = clone.querySelectorAll('.katex');
+        for (var j = 0; j < inlineEls.length; j++) {{
+            var iel = inlineEls[j];
+            var ann = iel.querySelector('annotation[encoding="application/x-tex"]');
+            if (ann) {{
+                var span = document.createElement('span');
+                span.style.fontFamily = '"Courier New", Courier, monospace';
+                span.textContent = ann.textContent.trim();
+                iel.parentNode.replaceChild(span, iel);
+            }} else {{
+                var fallbackText = iel.textContent || '';
+                var span2 = document.createElement('span');
+                span2.style.fontFamily = '"Courier New", Courier, monospace';
+                span2.textContent = fallbackText.trim();
+                iel.parentNode.replaceChild(span2, iel);
+            }}
+        }}
+
+        // 2c. Remove any leftover KaTeX-internal elements that may have survived
+        var junkSelectors = '.katex-mathml, .katex-html, .strut, .mspace, .vlist, .vlist-t, .vlist-t2, .vlist-r, .vlist-s, .pstrut, .frac-line, .sizing, .reset-size, .mtight';
+        var junkEls = clone.querySelectorAll(junkSelectors);
+        for (var k = junkEls.length - 1; k >= 0; k--) {{
+            var junk = junkEls[k];
+            // Move children up before removing, so we don't lose visible text
+            while (junk.firstChild) {{
+                junk.parentNode.insertBefore(junk.firstChild, junk);
+            }}
+            junk.parentNode.removeChild(junk);
+        }}
+
+        // 2d. Clean zero-width / invisible Unicode chars that cause stray symbols
+        var walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT, null, false);
+        while (walker.nextNode()) {{
+            // Remove zero-width spaces, joiners, BOM, object replacement, etc.
+            walker.currentNode.nodeValue = walker.currentNode.nodeValue
+                .replace(/[\\u200B\\u200C\\u200D\\u2060\\uFEFF\\uFFFC\\uFFFD]/g, '')
+                .replace(/\\u00A0/g, ' ');   // non-breaking space → normal space
+        }}
+
+        return clone;
+    }}
+
     async function copyRenderedContent() {{
-        const btn = document.getElementById('copyBtn');
-        const icon = document.getElementById('copyIcon');
-        const text = document.getElementById('copyText');
-        const status = document.getElementById('copyStatus');
+        var btn = document.getElementById('copyBtn');
+        var icon = document.getElementById('copyIcon');
+        var text = document.getElementById('copyText');
+        var status = document.getElementById('copyStatus');
         
         try {{
-            const b64 = "{b64_html}";
-            const htmlContent = atob(b64);
+            var b64 = "{b64_html}";
+            // Use the fixed UTF-8 decoder instead of raw atob()
+            var htmlContent = b64DecodeUnicode(b64);
             
-            const iframe = document.createElement('iframe');
+            var iframe = document.createElement('iframe');
             iframe.style.position = 'fixed';
             iframe.style.left = '-9999px';
             iframe.style.top = '-9999px';
@@ -635,16 +715,19 @@ def render_copy_button(rendered_text):
             iframe.contentDocument.write(htmlContent);
             iframe.contentDocument.close();
             
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Wait for marked.js + KaTeX to finish rendering
+            await new Promise(function(resolve) {{ setTimeout(resolve, 2000); }});
             
-            const contentDiv = iframe.contentDocument.getElementById('content');
+            var contentDiv = iframe.contentDocument.getElementById('content');
             
             if (contentDiv) {{
-                const renderedHTML = contentDiv.innerHTML;
-                const plainText = contentDiv.innerText;
+                // Clean the content: fix KaTeX artifacts + stray symbols
+                var cleanedContent = cleanForGoogleDocs(contentDiv);
+                var renderedHTML = cleanedContent.innerHTML;
+                var plainText = cleanedContent.innerText;
                 
                 try {{
-                    const clipboardItem = new ClipboardItem({{
+                    var clipboardItem = new ClipboardItem({{
                         'text/html': new Blob([renderedHTML], {{ type: 'text/html' }}),
                         'text/plain': new Blob([plainText], {{ type: 'text/plain' }})
                     }});
@@ -672,7 +755,7 @@ def render_copy_button(rendered_text):
             
             document.body.removeChild(iframe);
             
-            setTimeout(() => {{
+            setTimeout(function() {{
                 icon.textContent = '📋';
                 text.textContent = 'Copy Rendered Content';
                 status.style.opacity = '0';
@@ -687,7 +770,7 @@ def render_copy_button(rendered_text):
             status.style.opacity = '1';
             btn.style.background = '#c62828';
             
-            setTimeout(() => {{
+            setTimeout(function() {{
                 icon.textContent = '📋';
                 text.textContent = 'Copy Rendered Content';
                 status.style.opacity = '0';
