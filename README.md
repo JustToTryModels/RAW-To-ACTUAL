@@ -115,8 +115,6 @@ Try the live stock price prediction model here:
 
 [![Open Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://nvidia-stock-price-predictor.streamlit.app/)
 
-> Enter a date range and instantly get predicted NVIDIA closing prices powered by the trained **LSTM model**!
-
 <br>
 
 <div align="center">
@@ -126,6 +124,8 @@ Try the live stock price prediction model here:
 | <img src="https://github.com/MarpakaPradeepSai/NVIDIA-Stock-Price-Predictor/blob/main/Data/Images%20&%20GIF/NVIDIA_GIF_1.gif?raw=true" alt="Price Action & Forecast" width="100%"/> | <img src="https://github.com/MarpakaPradeepSai/NVIDIA-Stock-Price-Predictor/blob/main/Data/Images%20&%20GIF/NVIDIA_GIF_2.gif?raw=true" alt="Detailed Forecast" width="100%"/> |
 
 </div>
+
+> Enter a date range and instantly get predicted NVIDIA closing prices powered by the trained **LSTM model**!
 
 <br>
 
