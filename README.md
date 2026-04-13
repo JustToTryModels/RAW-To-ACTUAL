@@ -449,4 +449,3 @@ jupyter notebook Notebook/NVIDIA_Stock_Price_Analysis.ipynb
 
   If this project was helpful, please consider giving it a ⭐
 </div>
-```
